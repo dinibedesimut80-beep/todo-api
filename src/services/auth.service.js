@@ -1,0 +1,51 @@
+const jwt = require("jsonwebtoken");
+const User = require("../models/user.model");
+const AppError = require("../utils/AppError");
+
+function generateToken(userId) {
+  // Tambahkan fallback nilainya jika process.env tidak terbaca
+  const secret = process.env.JWT_SECRET || "fallback-secret-key-for-dev-and-testing";
+  const expiresIn = process.env.JWT_EXPIRES_IN || "1d";
+
+  return jwt.sign({ id: userId }, secret, { expiresIn });
+}
+
+async function register({ name, email, password }) {
+  const existingUser = await User.findOne({ email });
+
+  if (existingUser) {
+    throw new AppError("Email is already registered", 409);
+  }
+
+  const user = await User.create({ name, email, password });
+  const token = generateToken(user._id);
+
+  // Sembunyikan password dari response object demi keamanan
+  user.password = undefined;
+
+  return { user, token };
+}
+
+async function login({ email, password }) {
+  // .select("+password") diperlukan karena di schema, password diset select: false
+  const user = await User.findOne({ email }).select("+password");
+
+  if (!user) {
+    throw new AppError("Invalid email or password", 401);
+  }
+
+  const isPasswordCorrect = await user.comparePassword(password);
+
+  if (!isPasswordCorrect) {
+    throw new AppError("Invalid email or password", 401);
+  }
+
+  const token = generateToken(user._id);
+
+  // Sembunyikan password dari response object demi keamanan
+  user.password = undefined;
+
+  return { user, token };
+}
+
+module.exports = { register, login };
