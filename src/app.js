@@ -14,7 +14,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 2. Health Check / Root Route
+// 2. Health Check / Root Route
 app.get("/", (req, res) => {
+  res.json({ message: "Todo API is running" });
+});
+
+// >>> TAMBAHKAN KODE INI DI SINI <<<
+app.get("/api-docs", (req, res) => {
   res.json({ message: "Todo API is running" });
 });
 
@@ -22,7 +28,6 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/todos", todoRoutes);
 app.use("/api/stats", statsRoutes);
-
 // 4. Fallback & Error Handling Middlewares
 app.use(notFound);
 app.use(errorHandler);
